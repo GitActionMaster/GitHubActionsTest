@@ -10,10 +10,12 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     tasks = Task.query.all()
     return jsonify([task.to_dict() for task in tasks])
+
 
 @app.route('/tasks', methods=['POST'])
 def create_task():
@@ -24,6 +26,7 @@ def create_task():
     db.session.add(task)
     db.session.commit()
     return jsonify(task.to_dict()), 201
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

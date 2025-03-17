@@ -2,12 +2,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  push:
+    branches:
+      - main
     tags:
-      - 'v*'  # Se activa para tags que comiencen con "v"
+      - 'v*'   # Se activa cuando hagas push de un tag que comience por "v"
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test-and-lint:
