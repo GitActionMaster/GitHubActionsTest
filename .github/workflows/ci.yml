@@ -35,7 +35,7 @@ jobs:
 
       - name: Run normal tests (test_app.py)
         run: |
-          docker exec flask-app pytest test_app.py  # Ejecuta los tests específicos dentro del contenedor
+          docker exec flask-app pytest tests/test_app.py  # Ejecuta los tests específicos dentro del contenedor
 
       - name: Lint code
         run: flake8 .  # Ejecuta flake8 para el análisis estático del código
