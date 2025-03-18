@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'   # Se activa cuando hagas push de un tag que comience por "v"
+      - 'v*'   # Trigger the pipeline for version tags (e.g., v1.0.0)
   pull_request:
     branches:
       - main
@@ -29,15 +29,19 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest
-          coverage report
+          coverage run -m pytest  # Ejecuta los tests de pytest con cobertura
+          coverage report  # Muestra el informe de cobertura
+
+      - name: Run normal tests (test_app.py)
+        run: |
+          pytest test_app.py  # Ejecuta los tests definidos en test_app.py
 
       - name: Lint code
-        run: flake8 .
+        run: flake8 .  # Lintea el código con flake8
 
   docker-build:
     runs-on: ubuntu-latest
-    needs: test-and-lint
+    needs: test-and-lint  # Este job solo se ejecutará si 'test-and-lint' es exitoso
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -47,8 +51,8 @@ jobs:
 
   docker-publish:
     runs-on: ubuntu-latest
-    needs: docker-build
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: docker-build  # Este job solo se ejecutará si 'docker-build' es exitoso
+    if: startsWith(github.ref, 'refs/tags/')  # Solo se ejecuta cuando se hace push de un tag (por ejemplo: v1.0.0)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
