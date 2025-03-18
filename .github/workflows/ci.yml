@@ -13,50 +13,39 @@ on:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
-    services:
-      flask:
-        image: python:3.10  # Usamos la imagen de Python 3.10
-        ports:
-          - 5000:5000  # Exponemos el puerto 5000
-        options: --health-cmd="curl --silent --fail http://localhost:5000 || exit 1" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2  # Configura Docker Buildx
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Build Docker image
+        run: docker build . --file Dockerfile --tag task_manager_api:latest
 
-      - name: Build and run Flask app inside Docker
+      - name: Run Flask app in Docker container
         run: |
-          docker build -t task_manager_api .  # Construye la imagen Docker
-          docker run -d -p 5000:5000 task_manager_api  # Ejecuta la API Flask en el contenedor
-
-      - name: Wait for Flask to be ready
-        run: |
-          sleep 10  # Espera a que Flask se inicie (ajusta este tiempo si es necesario)
+          docker run -d --name flask-app -p 5000:5000 task_manager_api:latest  # Inicia el contenedor en segundo plano
+          sleep 10  # Espera un poco para que Flask arranque y esté disponible
 
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest  # Ejecuta los tests de pytest con cobertura
-          coverage report
+          docker exec flask-app coverage run -m pytest  # Ejecuta las pruebas dentro del contenedor
+          docker exec flask-app coverage report  # Muestra el informe de cobertura
 
       - name: Run normal tests (test_app.py)
         run: |
-          pytest test_app.py  # Ejecuta los tests de test_app.py
+          docker exec flask-app pytest test_app.py  # Ejecuta los tests específicos dentro del contenedor
 
       - name: Lint code
         run: flake8 .  # Ejecuta flake8 para el análisis estático del código
 
+      - name: Stop Docker container
+        run: docker stop flask-app  # Detiene el contenedor una vez que las pruebas han terminado
+
   docker-build:
     runs-on: ubuntu-latest
-    needs: test-and-lint  # Este job solo se ejecutará si 'test-and-lint' es exitoso
+    needs: test-and-lint
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -66,8 +55,8 @@ jobs:
 
   docker-publish:
     runs-on: ubuntu-latest
-    needs: docker-build  # Este job solo se ejecutará si 'docker-build' es exitoso
-    if: startsWith(github.ref, 'refs/tags/')  # Solo se ejecuta cuando se hace push de un tag
+    needs: docker-build
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
