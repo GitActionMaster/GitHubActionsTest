@@ -18,15 +18,15 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Docker
-        uses: docker/setup-buildx-action@v2  # Configura Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Build Docker image
         run: docker build . --file Dockerfile --tag task_manager_api:latest
 
       - name: Run Flask app in Docker container
         run: |
-          docker run -d --name flask-app -p 5000:5000 task_manager_api:latest  # Inicia el contenedor en segundo plano
-          sleep 10  # Espera un poco para que Flask arranque y esté disponible
+          docker run -d --name flask-app -p 5000:5000 task_manager_api:latest
+          sleep 10  # Espera 10 segundos para asegurar que Flask esté corriendo
 
       - name: Run tests with coverage
         run: |
@@ -35,13 +35,14 @@ jobs:
 
       - name: Run normal tests (test_app.py)
         run: |
-          docker exec flask-app pytest tests/test_app.py  # Ejecuta los tests específicos dentro del contenedor
+          docker exec flask-app pytest test_app.py  # Ejecuta los tests específicos dentro del contenedor
 
       - name: Lint code
-        run: flake8 .  # Ejecuta flake8 para el análisis estático del código
+        run: |
+          docker exec flask-app flake8 .  # Ejecuta flake8 dentro del contenedor
 
       - name: Stop Docker container
-        run: docker stop flask-app  # Detiene el contenedor una vez que las pruebas han terminado
+        run: docker stop flask-app  # Detiene el contenedor
 
   docker-build:
     runs-on: ubuntu-latest
@@ -71,3 +72,4 @@ jobs:
         run: |
           docker build . --file Dockerfile --tag ${{ secrets.DOCKERHUB_USERNAME }}/task_manager_api:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/task_manager_api:latest
+
